@@ -4,6 +4,7 @@
 
 # Configuration file with secrets
 /backend/config/config.env
+/frontend/.env
 
 # Uploaded media
 /backend/uploads/
