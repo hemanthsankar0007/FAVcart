@@ -24,6 +24,9 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// ✅ Serve frontend static files (images, CSS, JS)
+app.use('/images', express.static(path.join(__dirname, '../frontend/public/images')));
+app.use(express.static(path.join(__dirname, '../frontend/public')));
 
 // ✅ Import routes
 const products = require('./routes/product');
