@@ -56,7 +56,7 @@ export default function UpdateProfile () {
             toast(error, {
                 position: toast.POSITION.BOTTOM_CENTER,
                 type: 'error',
-                onOpen: ()=> { dispatch(clearAuthError) }
+                onOpen: ()=> { dispatch(clearAuthError()) }
             })
             return
         }
@@ -69,9 +69,9 @@ export default function UpdateProfile () {
                 <h1 className="mt-2 mb-5">Update Profile</h1>
 
                 <div className="form-group">
-                    <label htmlFor="email_field">Name</label>
+                    <label htmlFor="name_field">Name</label>
                     <input 
-                        type="name" 
+                        type="text" 
                         id="name_field" 
                         className="form-control"
                         name='name'

@@ -52,7 +52,7 @@ export default function Register() {
             toast(error, {
                 position: toast.POSITION.BOTTOM_CENTER,
                 type: 'error',
-                onOpen: ()=> { dispatch(clearAuthError) }
+                onOpen: ()=> { dispatch(clearAuthError()) }
             })
             return
         }
@@ -65,8 +65,8 @@ export default function Register() {
                 <h1 className="mb-3">Register</h1>
 
             <div className="form-group">
-                <label htmlFor="email_field">Name</label>
-                <input name='name' onChange={onChange} type="name" id="name_field" className="form-control" />
+                <label htmlFor="name_field">Name</label>
+                <input name='name' onChange={onChange} type="text" id="name_field" className="form-control" />
             </div>
 
                 <div className="form-group">
