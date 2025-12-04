@@ -29,7 +29,7 @@ module.exports = (err, req, res, next) =>{
         }
 
         if(err.code == 11000) {
-            let message = `Duplicate ${Object.keys(err.keyValue)} error`;
+            let message = `${Object.keys(err.keyValue)[0]} '${Object.values(err.keyValue)[0]}' already exists. Please use a different ${Object.keys(err.keyValue)[0]}.`;
             error = new Error(message)
             err.statusCode = 400
         }

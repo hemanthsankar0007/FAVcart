@@ -1,3 +1,6 @@
+// Header.js
+// - Top navigation bar component displayed across pages
+// - Shows brand logo, search input, login/profile dropdown and cart
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Search from './Search';
@@ -5,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Dropdown, Image } from 'react-bootstrap';
 import { logout } from '../../actions/userActions';
 
-const DEFAULT_AVATAR = '/images/default_avatar.png'; // make sure this file exists inside frontend/public/images/
+const DEFAULT_AVATAR = '/images/default_avatar.png'; // fallback avatar in public/images
 
 export default function Header() {
   const { isAuthenticated, user } = useSelector((state) => state.authState);
@@ -13,11 +16,16 @@ export default function Header() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Logout handler triggers the logout action which clears server cookie and client state
   const logoutHandler = () => {
     dispatch(logout());
   };
 
   // Handle both object & string avatars gracefully
+  // avatarSrc supports two shapes:
+  // 1) string URL (e.g., Cloudinary URL stored as string)
+  // 2) object with `.url` property (older code path)
+  // Falls back to DEFAULT_AVATAR when no avatar available
   const avatarSrc =
     user?.avatar && typeof user.avatar === 'string'
       ? user.avatar

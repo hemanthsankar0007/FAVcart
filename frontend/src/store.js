@@ -1,3 +1,7 @@
+// store.js - Redux store configuration
+// - Combines slice reducers used across the app
+// - Configures middleware (thunk) and disables strict serializable checks
+//   because we sometimes store non-serializable values (e.g., files or Stripe objects)
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import thunk from "redux-thunk";
 
@@ -8,6 +12,7 @@ import cartReducer from "./slices/cartSlice";
 import orderReducer from "./slices/orderSlice";
 import userReducer from "./slices/userSlice";
 
+// Root reducer - namespaces each slice to avoid name collisions in the store
 const reducer = combineReducers({
   productsState: productsReducer,
   productState: productReducer,
@@ -17,13 +22,14 @@ const reducer = combineReducers({
   userState: userReducer,
 });
 
+// Create the Redux store
 const store = configureStore({
   reducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false, // disables annoying warnings about non-serializable values
+      serializableCheck: false, // disable serializability checks for convenience
     }).concat(thunk),
-  devTools: process.env.NODE_ENV !== "production", // enables Redux DevTools only in dev
+  devTools: process.env.NODE_ENV !== "production", // enable Redux DevTools in development
 });
 
 export default store;

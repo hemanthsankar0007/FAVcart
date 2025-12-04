@@ -1,3 +1,10 @@
+// server.js - entry point for the backend
+// Responsibilities:
+//  - Load environment variables
+//  - Connect to MongoDB
+//  - Apply top-level middleware (CORS)
+//  - Start Express app exported from `app.js`
+//  - Handle process-level errors (unhandled rejections / exceptions)
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -7,7 +14,10 @@ const app = require("./app");
 // Load environment variables
 dotenv.config({ path: "./config/config.env" });
 
-// ✅ Enforce CORS globally (even if app.js misses it)
+// ✅ Enforce CORS globally (allows frontend to call API)
+// This middleware ensures the server responds with appropriate
+// Access-Control-Allow-* headers for requests coming from the
+// frontend (localhost:3000) or deployed frontend URL.
 app.use(
   cors({
     origin: [

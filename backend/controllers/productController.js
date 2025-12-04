@@ -1,24 +1,36 @@
+/**
+ * productController.js
+ * - Contains all handlers related to Product CRUD and reviews
+ * - Controllers are wrapped in `catchAsyncError` to forward errors to central error middleware
+ * - Uses APIFeatures utility to implement search, filter and pagination
+ */
 const Product = require("../models/productModel");
 const ErrorHandler = require("../utils/errorHandler");
 const catchAsyncError = require("../middlewares/catchAsyncError");
 const APIFeatures = require("../utils/apiFeatures");
 
-//Get Products - /api/v1/products
+// Get Products - /api/v1/products
+// - Supports keyword search, filters (price/category/ratings) and pagination
+// - Uses APIFeatures utility to compose a Mongoose query based on req.query
 exports.getProducts = catchAsyncError(async (req, res, next) => {
-  const resPerPage = 4;
+  const resPerPage = 4; // number of results per page
 
+  // buildQuery returns an APIFeatures instance with the base query and the parsed request query
   let buildQuery = () => {
     return new APIFeatures(Product.find(), req.query).search().filter();
   };
 
+  // Count how many products match the current filters (before pagination)
   const filteredProductsCount = await buildQuery().query.countDocuments({});
   const totalProductsCount = await Product.countDocuments({});
   let productsCount = totalProductsCount;
 
+  // If filters are applied, show filtered count so frontend can reflect it
   if (filteredProductsCount !== totalProductsCount) {
     productsCount = filteredProductsCount;
   }
 
+  // Apply pagination to the previously built query and execute it
   const products = await buildQuery().paginate(resPerPage).query;
 
   res.status(200).json({
@@ -29,23 +41,28 @@ exports.getProducts = catchAsyncError(async (req, res, next) => {
   });
 });
 
-//Create Product - /api/v1/product/new
+// Create Product - /api/v1/product/new
+// - Admin-only route (authorization enforced in route middleware)
+// - Handles optional file uploads (multer) and converts uploaded files into public URLs
 exports.newProduct = catchAsyncError(async (req, res, next) => {
   let images = [];
+  // BASE_URL used to construct fully-qualified URLs for uploaded images
   let BASE_URL = process.env.BACKEND_URL;
   if (process.env.NODE_ENV === "production") {
     BASE_URL = `${req.protocol}://${req.get("host")}`;
   }
 
+  // If files were uploaded using multer, build public URLs and store them in req.body.images
   if (req.files.length > 0) {
     req.files.forEach((file) => {
-      let url = `${BASE_URL}/uploads/product/${file.originalname}`;
+      let url = `${BASE_URL}/uploads/product/${file.filename}`;
       images.push({ image: url });
     });
   }
 
   req.body.images = images;
 
+  // Attach the creator user id (available via auth middleware) and create the product
   req.body.user = req.user.id;
   const product = await Product.create(req.body);
   res.status(201).json({
@@ -54,7 +71,8 @@ exports.newProduct = catchAsyncError(async (req, res, next) => {
   });
 });
 
-//Get Single Product - api/v1/product/:id
+// Get Single Product - api/v1/product/:id
+// - Populates the `reviews.user` field with name and email to show reviewer info
 exports.getSingleProduct = catchAsyncError(async (req, res, next) => {
   const product = await Product.findById(req.params.id).populate(
     "reviews.user",
@@ -71,14 +89,15 @@ exports.getSingleProduct = catchAsyncError(async (req, res, next) => {
   });
 });
 
-//Update Product - api/v1/product/:id
+// Update Product - api/v1/product/:id
+// - Admin-only route. Supports replacing or keeping previously uploaded images
 exports.updateProduct = catchAsyncError(async (req, res, next) => {
   let product = await Product.findById(req.params.id);
 
-  //uploading images
+  // uploading images
   let images = [];
 
-  //if images not cleared we keep existing images
+  // if images not cleared keep existing images (imagesCleared comes from client)
   if (req.body.imagesCleared === "false") {
     images = product.images;
   }
@@ -87,9 +106,10 @@ exports.updateProduct = catchAsyncError(async (req, res, next) => {
     BASE_URL = `${req.protocol}://${req.get("host")}`;
   }
 
+  // Append newly uploaded files if any
   if (req.files.length > 0) {
     req.files.forEach((file) => {
-      let url = `${BASE_URL}/uploads/product/${file.originalname}`;
+      let url = `${BASE_URL}/uploads/product/${file.filename}`;
       images.push({ image: url });
     });
   }
@@ -133,7 +153,9 @@ exports.deleteProduct = catchAsyncError(async (req, res, next) => {
   });
 });
 
-//Create Review - api/v1/review
+// Create Review - api/v1/review
+// - Authenticated users can add or update a review for a product
+// - Maintains numOfReviews and average rating
 exports.createReview = catchAsyncError(async (req, res, next) => {
   const { productId, rating, comment } = req.body;
 
@@ -144,13 +166,13 @@ exports.createReview = catchAsyncError(async (req, res, next) => {
   };
 
   const product = await Product.findById(productId);
-  //finding user review exists
+  // check if this user already reviewed this product
   const isReviewed = product.reviews.find((review) => {
     return review.user.toString() == req.user.id.toString();
   });
 
   if (isReviewed) {
-    //updating the  review
+    // update existing review
     product.reviews.forEach((review) => {
       if (review.user.toString() == req.user.id.toString()) {
         review.comment = comment;
@@ -158,11 +180,11 @@ exports.createReview = catchAsyncError(async (req, res, next) => {
       }
     });
   } else {
-    //creating the review
+    // create a new review
     product.reviews.push(review);
     product.numOfReviews = product.reviews.length;
   }
-  //find the average of the product reviews
+  // recalculate average rating
   product.ratings =
     product.reviews.reduce((acc, review) => {
       return review.rating + acc;

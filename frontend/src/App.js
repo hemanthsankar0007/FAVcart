@@ -1,5 +1,11 @@
+// App.js - Main application component
+// Responsibilities:
+//  - Fetch application-level configuration (e.g., Stripe API key)
+//  - Dispatch initial actions (load authenticated user)
+//  - Define client-side routes and protect admin/user routes
 import './App.css';
 import Home from './components/Home';
+import Landing from './components/Landing';
 import Footer from './components/layouts/Footer';
 import Header from './components/layouts/Header';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
@@ -40,9 +46,13 @@ import UpdateUser from './components/admin/UpdateUser';
 import ReviewList from './components/admin/ReviewList';
 
 function App() {
+  // Load Stripe publishable key (used by the client to initialize Stripe Elements)
   const [stripeApiKey, setStripeApiKey] = useState("")
   useEffect(() => {
+    // Dispatch user loader to check for existing authenticated user (JWT in cookie)
     store.dispatch(loadUser)
+
+    // Fetch Stripe API key from backend (keeps secret keys server-side)
     async function getStripeApiKey(){
       const {data} = await axios.get('/api/v1/stripeapi')
       setStripeApiKey(data.stripeApiKey)
@@ -57,8 +67,10 @@ function App() {
             <Header/>
                 <div className='container container-fluid'>
                   <ToastContainer theme='dark' />
-                  <Routes>
-                      <Route path='/' element={<Home/>} />
+                    <Routes>
+                      <Route path='/' element={<Landing/>} />
+                      <Route path='/shop' element={<Home/>} />
+                      {/* Product search route uses `keyword` param — ProductSearch reads it and dispatches getProducts */}
                       <Route path='/search/:keyword' element={<ProductSearch/>} />
                       <Route path='/product/:id' element={<ProductDetail/>} />
                       <Route path='/login' element={<Login/>} />
@@ -74,6 +86,7 @@ function App() {
                       <Route path='/order/success' element={<ProtectedRoute><OrderSuccess/></ProtectedRoute> } />
                       <Route path='/orders' element={<ProtectedRoute><UserOrders/></ProtectedRoute> } />
                       <Route path='/order/:id' element={<ProtectedRoute><OrderDetail/></ProtectedRoute> } />
+                      {/* Only enable payment route if Stripe key has been loaded */}
                       {stripeApiKey && <Route path='/payment' element={<ProtectedRoute><Elements stripe={loadStripe(stripeApiKey)}><Payment/></Elements></ProtectedRoute> } />
 } 
                   </Routes>

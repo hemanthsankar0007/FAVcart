@@ -1,3 +1,6 @@
+// productActions.js
+// - Frontend action creators that call backend APIs and dispatch Redux slice actions
+// - Uses axios to perform HTTP requests to the backend defined by REACT_APP_API_URL
 import axios from 'axios';
 import {
   productsFail,
@@ -33,6 +36,8 @@ import {
 } from '../slices/productSlice';
 
 // 🔥 Base API URL from .env
+// The frontend reads REACT_APP_API_URL in `frontend/.env` so we can switch between
+// local (`http://localhost:8000`) and production (deployed backend URL) easily.
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 // ✅ Get All Products
@@ -40,12 +45,13 @@ export const getProducts = (keyword, price, category, rating, currentPage) => as
   try {
     dispatch(productsRequest());
     let link = `${API_BASE_URL}/api/v1/products?page=${currentPage}`;
-
+    // Build query string depending on filters provided by UI
     if (keyword) link += `&keyword=${keyword}`;
     if (price) link += `&price[gte]=${price[0]}&price[lte]=${price[1]}`;
     if (category) link += `&category=${category}`;
     if (rating) link += `&ratings=${rating}`;
 
+    // Call backend and dispatch success/failure accordingly
     const { data } = await axios.get(link);
     dispatch(productsSuccess(data));
   } catch (error) {
