@@ -9,6 +9,25 @@ const crypto = require('crypto')
 exports.registerUser = catchAsyncError(async (req, res, next) => {
     const {name, email, password } = req.body
 
+    // Validate required fields
+    if (!email || !email.trim()) {
+        return next(new ErrorHandler('Please enter an email address', 400))
+    }
+
+    if (!name || !name.trim()) {
+        return next(new ErrorHandler('Please enter your name', 400))
+    }
+
+    if (!password) {
+        return next(new ErrorHandler('Please enter a password', 400))
+    }
+
+    // Check if user with this email already exists
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+    if (existingUser) {
+        return next(new ErrorHandler('Email already exists. Please use a different email address.', 400))
+    }
+
     let avatar;
     
     let BASE_URL = process.env.BACKEND_URL;
@@ -21,8 +40,8 @@ exports.registerUser = catchAsyncError(async (req, res, next) => {
     }
 
     const user = await User.create({
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
         password,
         avatar
     });
@@ -39,8 +58,8 @@ exports.loginUser = catchAsyncError(async (req, res, next) => {
         return next(new ErrorHandler('Please enter email & password', 400))
     }
 
-    //finding the user database
-    const user = await User.findOne({email}).select('+password');
+    //finding the user database (case-insensitive email lookup)
+    const user = await User.findOne({email: email.trim().toLowerCase()}).select('+password');
 
     if(!user) {
         return next(new ErrorHandler('Invalid email or password', 401))
@@ -70,7 +89,13 @@ exports.logoutUser = (req, res, next) => {
 
 //Forgot Password - /api/v1/password/forgot
 exports.forgotPassword = catchAsyncError( async (req, res, next)=>{
-    const user =  await User.findOne({email: req.body.email});
+    const email = req.body.email;
+    
+    if (!email || !email.trim()) {
+        return next(new ErrorHandler('Please enter an email address', 400))
+    }
+    
+    const user =  await User.findOne({email: email.trim().toLowerCase()});
 
     if(!user) {
         return next(new ErrorHandler('User not found with this email', 404))
