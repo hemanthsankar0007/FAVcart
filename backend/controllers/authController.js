@@ -22,8 +22,9 @@ exports.registerUser = catchAsyncError(async (req, res, next) => {
         return next(new ErrorHandler('Please enter a password', 400))
     }
 
-    // Check if user with this email already exists
-    const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
+    // Check if user with this email already exists (case-insensitive)
+    const existingUser = await User.findOne({ email: email.trim().toLowerCase() })
+        .collation({ locale: 'en', strength: 2 });
     if (existingUser) {
         return next(new ErrorHandler('Email already exists. Please use a different email address.', 400))
     }
@@ -59,7 +60,9 @@ exports.loginUser = catchAsyncError(async (req, res, next) => {
     }
 
     //finding the user database (case-insensitive email lookup)
-    const user = await User.findOne({email: email.trim().toLowerCase()}).select('+password');
+    const user = await User.findOne({email: email.trim().toLowerCase()})
+        .collation({ locale: 'en', strength: 2 })
+        .select('+password');
 
     if(!user) {
         return next(new ErrorHandler('Invalid email or password', 401))
@@ -95,7 +98,8 @@ exports.forgotPassword = catchAsyncError( async (req, res, next)=>{
         return next(new ErrorHandler('Please enter an email address', 400))
     }
     
-    const user =  await User.findOne({email: email.trim().toLowerCase()});
+    const user =  await User.findOne({email: email.trim().toLowerCase()})
+        .collation({ locale: 'en', strength: 2 });
 
     if(!user) {
         return next(new ErrorHandler('User not found with this email', 404))

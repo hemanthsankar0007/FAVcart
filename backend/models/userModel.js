@@ -13,7 +13,6 @@ const userSchema = new mongoose.Schema({
     email:{
         type: String,
         required: [true, 'Please enter email'],
-        unique: true,
         trim: true,
         lowercase: true,
         validate: [validator.isEmail, 'Please enter valid email address']
@@ -68,6 +67,14 @@ userSchema.methods.getResetToken = function(){
 
     return token
 }
+
+// Create a unique index on email with case-insensitive collation
+// This ensures email uniqueness is checked in a case-insensitive manner
+userSchema.index({ email: 1 }, { 
+    unique: true, 
+    collation: { locale: 'en', strength: 2 } 
+});
+
 let model =  mongoose.model('User', userSchema);
 
 
