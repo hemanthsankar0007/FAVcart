@@ -72,7 +72,7 @@ exports.loginUser = catchAsyncError(async (req, res, next) => {
         return next(new ErrorHandler('Invalid email or password', 401))
     }
 
-    sendToken(user, 201, res)
+    sendToken(user, 200, res)
     
 })
 
@@ -136,7 +136,7 @@ exports.forgotPassword = catchAsyncError( async (req, res, next)=>{
         user.resetPasswordToken = undefined;
         user.resetPasswordTokenExpire = undefined;
         await user.save({validateBeforeSave: false});
-        return next(new ErrorHandler(error.message), 500)
+        return next(new ErrorHandler(error.message, 500))
     }
 
 })  
@@ -153,18 +153,18 @@ exports.resetPassword = catchAsyncError( async (req, res, next) => {
     } )
 
     if(!user) {
-        return next(new ErrorHandler('Password reset token is invalid or expired'));
+        return next(new ErrorHandler('Password reset token is invalid or expired', 400));
     }
 
     if( req.body.password !== req.body.confirmPassword) {
-        return next(new ErrorHandler('Password does not match'));
+        return next(new ErrorHandler('Password does not match', 400));
     }
 
     user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordTokenExpire = undefined;
     await user.save({validateBeforeSave: false})
-    sendToken(user, 201, res)
+    sendToken(user, 200, res)
 
 })
 
@@ -236,7 +236,7 @@ exports.getAllUsers = catchAsyncError(async (req, res, next) => {
 exports.getUser = catchAsyncError(async (req, res, next) => {
     const user = await User.findById(req.params.id);
     if(!user) {
-        return next(new ErrorHandler(`User not found with this id ${req.params.id}`))
+        return next(new ErrorHandler(`User not found with this id ${req.params.id}`, 404))
     }
     res.status(200).json({
         success: true,
@@ -267,9 +267,9 @@ exports.updateUser = catchAsyncError(async (req, res, next) => {
 exports.deleteUser = catchAsyncError(async (req, res, next) => {
     const user = await User.findById(req.params.id);
     if(!user) {
-        return next(new ErrorHandler(`User not found with this id ${req.params.id}`))
+        return next(new ErrorHandler(`User not found with this id ${req.params.id}`, 404))
     }
-    await user.remove();
+    await User.findByIdAndDelete(req.params.id);
     res.status(200).json({
         success: true,
     })
